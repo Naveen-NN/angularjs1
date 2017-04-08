@@ -1,0 +1,124 @@
+<!DOCTYPE HTML>
+<html ng-app="exampleApp">
+
+<head>
+    <title>
+        Angular form validation
+    </title>
+    <link rel="stylesheet" href="/angularjs1/scripts/bootstrap/css/bootstrap.min.css" />
+    <script src="/angularjs1/scripts/jquery/jquery.min.js"></script>
+    <script src="/angularjs1/scripts/jquery/jquery.min.js"></script>
+    <script src="/angularjs1/scripts/angular-1.6.3/angular.js"></script>
+    <script>
+       var module  =  angular.module("exampleApp", [])
+        var controller  = module.controller("defaultCtrl", function ($scope, FormFieldErrorHighlighter) {
+            var main  = this;
+            $scope.addUser = function (userDetails) {
+                $scope.message = userDetails.name
+                    + " (" + userDetails.email + ") (" + userDetails.agreed + ")";
+            }
+            $scope.message = "Ready";
+            $scope.getError = function (error) {
+            if (angular.isDefined(error)) {
+                    if (error.required) {
+                        return "Please enter a value";
+                    } else if (error.email) {
+                        return "Please enter a valid email address";
+                    }
+                }
+            },
+
+            $scope.validate = function(){
+               FormFieldErrorHighlighter.highlight($scope.myForm, false, document.getElementById("ctrlTest"));         
+            }   
+        });
+        
+        module.service('FormFieldErrorHighlighter', ['$window', function($window) {
+        return {
+            /**
+             * Highlights all fields in the form by setting them to dirty and then
+             * calling validate() on them.
+             * @param formController - the formController whose fields you want to highlight
+             * @param scrollIntoView - Optional parameter to trigger scrolling the window so the
+             *      first error field is in view. Note that if your field is in a scrolling container, you will
+             *      likely need to handle scrolling yourself. Defaults to false.
+             * @param element - when scrolling the errors into view, you must pass the element in which to search
+             *      for invalid fields.
+             */
+            highlight: function(formController, scrollIntoView, element) {
+                //we don't want to trigger validation more than once
+                var fieldCache = [];
+
+                for (var prop in formController.$error) {
+                    var errorType = formController.$error[prop];
+
+                    for  (var field in errorType) {
+                        var fieldCtrl = errorType[field];
+                        if (fieldCache.indexOf(fieldCtrl) === -1) {
+                            fieldCache.push(fieldCtrl);
+                            fieldCtrl.$setDirty();
+                            fieldCtrl.$validate();
+                        }
+                    }
+
+                }
+                //we can automatically scroll the first error field into view if desired. Note though, that this
+                //scrolls the window. If the field is in a scrolling container, you would want to handle this yourself
+                if (scrollIntoView && element &&  element.find('.ng-invalid').length > 0) {
+                    $window.scrollTo(0, element.find('.form-group .ng-invalid').closest('.form-group').offset().top - 10);
+                }
+
+            }
+        };
+    }])
+
+    </script>
+    <style>
+            form .ng-invalid-required.ng-dirty { background-color: lightpink; }
+            form .ng-invalid-email.ng-dirty { background-color: lightgoldenrodyellow; }
+            form .ng-invalid.ng-dirty { background-color: lightpink; }
+            form .ng-valid.ng-dirty { background-color: lightgreen; }
+            span.summary.ng-invalid { color: red; font-weight: bold; }
+            span.summary.ng-valid { color: green; }
+            div.error {color: red; font-weight: bold;}
+</style>
+</head>
+
+<body>
+    <div id="todoPanel" class="panel" ng-controller="defaultCtrl">
+        <form name="myForm" novalidate ng-submit="addUser(newUser)">
+            <div class="well" id="ctrlTest">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input name="userName" type="text" class="form-control" required ng-model="newUser.name">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input name="userEmail" type="email" class="form-control" required ng-model="newUser.email">
+                <div class="error" ng-show="myForm.userEmail.$invalid && myForm.userEmail.$dirty">
+                    {getError(myForm.userEmail.1error)}
+                </div>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input name="agreed" type="checkbox" ng-model="newUser.agreed" required>
+                        I agree to the terms and conditions
+                    </label>
+                </div>
+                <button type="button" ng-click="validate()" class="btn btn-primary btn-block">
+                OK
+                </button>
+            </div>
+            <div class="well">
+                Message: {{message}}
+                <div>
+                    Valid: 
+                    <span class="summary" ng-class="myForm.$valid ? 'ng-valid' : 'ng-invalid'">
+                        {{myForm.$valid}}
+                    </span>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html
